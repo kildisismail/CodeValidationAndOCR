@@ -26,17 +26,6 @@ internal class Program
 
         app.MapControllers();
 
-
-        var characterSet = "ACDEFGHKLMNPRTXYZ234579";
-        var codeLength = 8;
-        var random = new Random();
-
-        var uniqueCode = new string(Enumerable.Repeat(characterSet, codeLength)
-          .Select(s => s[random.Next(s.Length)]).ToArray());
-
-        Console.WriteLine(uniqueCode);
-
-
         app.Run();
     }
 }
