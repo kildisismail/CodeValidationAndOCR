@@ -38,14 +38,14 @@ namespace WebApplication1.Controllers
 
 
         [HttpPost("uploadjson")]
-        public IActionResult VerifyCode([FromBody] JsonElement body)
+        public IActionResult JsonParsed([FromBody] JsonElement body)
         {
             string? text = "";
             try
             {
                 string jsonText = System.Text.Json.JsonSerializer.Serialize(body);
                 var responses = JsonConvert.DeserializeObject<OCRText[]>(jsonText);
-                Dictionary<int, string> codes = new Dictionary<int, string>();
+                Dictionary<int, string> ocrDatas = new Dictionary<int, string>();
 
                 for (int i = 1; i < responses?.Length; i++)
                 {
@@ -54,10 +54,10 @@ namespace WebApplication1.Controllers
 
                     vertices = vertices.OrderBy(v => v.X).ThenBy(v => v.Y).ToList();
 
-                    codes.Add(i, text);
+                    ocrDatas.Add(i, text);
                 }
 
-                return Ok(codes);
+                return Ok(ocrDatas);
             }
             catch (Exception ex)
             {
