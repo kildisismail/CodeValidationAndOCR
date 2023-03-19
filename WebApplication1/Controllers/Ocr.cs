@@ -62,10 +62,10 @@ namespace WebApplication1.Controllers
                 {
                     rawList.Add(new RawList
                     {
-                        CurrentY = responses[i].BoundingPoly.Vertices[0].Y,
-                        CurrentX = responses[i].BoundingPoly.Vertices[0].X,
+                        CurrentY = responses?[i].BoundingPoly?.Vertices?[0].Y,
+                        CurrentX = responses?[i].BoundingPoly?.Vertices?[0].X,
                         RowNumber = i,
-                        Text = responses[i].Description
+                        Text = responses?[i].Description
                     });
 
                 }
@@ -82,7 +82,7 @@ namespace WebApplication1.Controllers
                         normalizedList.Add(new RawList { Text = rawList[i].Text, RowNumber = rowCounter });
 
                     }
-                    if (rawList[i + 1].CurrentY - rawList[i].CurrentY > maxRowGap && rawList[i + 1].CurrentY - rawList[i].CurrentY < maxRowGap*3 && rawList.Count > i)
+                    if (rawList[i + 1].CurrentY - rawList[i].CurrentY > maxRowGap && rawList.Count > i)
                     {
                         rowCounter++;
                     }
