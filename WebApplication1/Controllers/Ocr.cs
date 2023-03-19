@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.ComponentModel;
+using System.Security.Cryptography.Xml;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using static WebApplication1.Controllers.Ocr;
@@ -36,28 +38,74 @@ namespace WebApplication1.Controllers
             public int Y { get; set; }
         }
 
+        public class RawList
+        {
+            public int CurrentY { get; set; }
+            public int CurrentX { get; set; }
+            public int RowNumber { get; set; }
+            public string Text { get; set; }
+        }
+
 
         [HttpPost("uploadjson")]
-        public IActionResult JsonParsed([FromBody] JsonElement body)
+        public IActionResult VerifyCode([FromBody] JsonElement body)
         {
-            string? text = "";
+            int maxY = 550;
+            int maxRowGap = 15;
+            List<RawList> rawList = new();
+            List<RawList> normalizedList = new();
             try
             {
                 string jsonText = System.Text.Json.JsonSerializer.Serialize(body);
                 var responses = JsonConvert.DeserializeObject<OCRText[]>(jsonText);
-                Dictionary<int, string> ocrDatas = new Dictionary<int, string>();
+                Dictionary<int, string> codes = new();
 
                 for (int i = 1; i < responses?.Length; i++)
                 {
-                    text = responses[i].Description;
-                    var vertices = responses[i].BoundingPoly.Vertices;
+                    rawList.Add(new RawList
+                    {
+                        CurrentY = responses[i].BoundingPoly.Vertices[0].Y,
+                        CurrentX = responses[i].BoundingPoly.Vertices[0].X,
+                        RowNumber = i,
+                        Text = responses[i].Description
+                    });
 
-                    vertices = vertices.OrderBy(v => v.X).ThenBy(v => v.Y).ToList();
+                }
+                int rowCounter = 1;
+                for (int i = 0; i < rawList.Count; i++)
+                {
+                    if (rawList.Count() - 1 == i)
+                        break;
+                    if (rawList[i].CurrentY >= 0 &&
+                        rawList[i].CurrentY <= maxY &&
+                        rawList[i + 1].CurrentX - rawList[i].CurrentX < maxRowGap)
+                    {
+                        normalizedList.Add(new RawList { Text = rawList[i].Text, RowNumber = rowCounter });
 
-                    ocrDatas.Add(i, text);
+                    }
+                    if (rawList[i + 1].CurrentY - rawList[i].CurrentY > maxRowGap && rawList.Count > i)
+                    {
+                        rowCounter++;
+                    }
+                    else
+                    {
+                        normalizedList.Add(new RawList { Text = rawList[i].Text, RowNumber = rowCounter });
+                    }
+
                 }
 
-                return Ok(ocrDatas);
+                var datax = normalizedList.GroupBy(l => new { l.RowNumber })
+                                          .Select(g => new { v = string.Join(",", g.Select(i => i.Text)) })
+                                          .ToList();
+
+                string finalText = "";
+
+                for (int i = 0; i < datax.Count; i++)
+                {
+                    finalText += $"{i + 1} : {datax[i].v} \n";
+                }
+
+                return Ok(finalText);
             }
             catch (Exception ex)
             {
